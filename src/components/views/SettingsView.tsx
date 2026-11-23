@@ -473,14 +473,29 @@ export default function SettingsView() {
                 type="button"
                 onClick={() =>
                   setTemplate({
-                    command: 'set address',
+                    command: 'set_address',
+                    X1: 4,
+                    X2: 1,
+                    X3: 2,
+                    X4: 3,
+                  })
+                }
+                className="rounded-md bg-sky-50 border border-sky-200 px-2.5 py-1 text-[10px] font-bold text-sky-700 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300"
+              >
+                Template: X1..X4 (แบบที่ 1)
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setTemplate({
+                    command: 'set_address',
                     X24: 4,
                     X25: 1,
                     X26: 2,
                     X27: 3,
                   })
                 }
-                className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
               >
                 Template: X24..X27
               </button>
@@ -494,9 +509,9 @@ export default function SettingsView() {
                     done_select: 98,
                   })
                 }
-                className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
               >
-                Template: Counts
+                Template: Counts (รวม)
               </button>
             </div>
 
