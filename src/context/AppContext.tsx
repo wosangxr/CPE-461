@@ -81,9 +81,70 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [mqttLogs, setMqttLogs] = useState<MQTTLog[]>([]);
 
   // Simulation mode
-  const [isSimulationMode, setIsSimulationMode] = useState<boolean>(true);
+  const [isSimulationMode, setIsSimulationMode] = useState<boolean>(false);
 
   const clientRef = useRef<MqttClient | null>(null);
+
+  // Helper to apply incoming or outgoing payload to registers
+  const applyPayloadToRegisters = useCallback((data: any) => {
+    if (!data || typeof data !== 'object') return;
+
+    setRegisters((prev) => {
+      const next = { ...prev };
+
+      // Format 1: Direct register keys
+      if (data.HDW1 !== undefined) next.HDW1 = Number(data.HDW1);
+      if (data.HDW2 !== undefined) next.HDW2 = Number(data.HDW2);
+      if (data.HDW3 !== undefined) next.HDW3 = Number(data.HDW3);
+      if (data.HDW4 !== undefined) next.HDW4 = Number(data.HDW4);
+
+      if (data.HDW10 !== undefined) next.HDW10 = Number(data.HDW10);
+      if (data.HDW11 !== undefined) next.HDW11 = Number(data.HDW11);
+      if (data.HDW12 !== undefined) next.HDW12 = Number(data.HDW12);
+      if (data.HDW13 !== undefined) next.HDW13 = Number(data.HDW13);
+
+      // Format 2: Named keys
+      if (data.total !== undefined) next.HDW1 = Number(data.total);
+      if (data.fix_select !== undefined) next.HDW2 = Number(data.fix_select);
+      if (data.processing_select !== undefined) next.HDW3 = Number(data.processing_select);
+      if (data.done_select !== undefined) next.HDW4 = Number(data.done_select);
+
+      if (data.computer !== undefined) next.HDW10 = Number(data.computer);
+      if (data.printer !== undefined) next.HDW11 = Number(data.printer);
+      if (data.network !== undefined) next.HDW12 = Number(data.network);
+      if (data.other !== undefined) next.HDW13 = Number(data.other);
+
+      // Format 3: X registers (According to specsheet.txt mapping)
+      if (data.X1 !== undefined) { next.X1 = Number(data.X1); next.HDW1 = next.X1; }
+      if (data.X2 !== undefined) { next.X2 = Number(data.X2); next.HDW2 = next.X2; }
+      if (data.X3 !== undefined) { next.X3 = Number(data.X3); next.HDW3 = next.X3; }
+      if (data.X4 !== undefined) { next.X4 = Number(data.X4); next.HDW4 = next.X4; }
+      if (data.X11 !== undefined) { next.X11 = Number(data.X11); next.HDW10 = next.X11; }
+      if (data.X12 !== undefined) { next.X12 = Number(data.X12); next.HDW11 = next.X12; }
+      if (data.X13 !== undefined) { next.X13 = Number(data.X13); next.HDW12 = next.X13; }
+      if (data.X14 !== undefined) { next.X14 = Number(data.X14); next.HDW13 = next.X14; }
+
+      // Mapping X24 -> HDW1 (Total), X25 -> HDW2 (Pending), X26 -> HDW3 (Processing), X27 -> HDW4 (Done)
+      if (data.X24 !== undefined) {
+        next.X24 = Number(data.X24);
+        next.HDW1 = next.X24;
+      }
+      if (data.X25 !== undefined) {
+        next.X25 = Number(data.X25);
+        next.HDW2 = next.X25;
+      }
+      if (data.X26 !== undefined) {
+        next.X26 = Number(data.X26);
+        next.HDW3 = next.X26;
+      }
+      if (data.X27 !== undefined) {
+        next.X27 = Number(data.X27);
+        next.HDW4 = next.X27;
+      }
+
+      return next;
+    });
+  }, []);
 
   // Helper to log MQTT
   const logMqtt = useCallback((direction: 'in' | 'out', topic: string, raw: any) => {
@@ -97,7 +158,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         payload: payloadStr,
         rawJson: typeof raw === 'object' ? raw : undefined,
       },
-      ...prev.slice(0, 99), // keep last 100 logs
+      ...prev.slice(0, 99),
     ]);
   }, []);
 
@@ -142,7 +203,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setConnectionStatus('connected');
         setLastError(null);
 
-        // Subscribe to configured topics
         const topics = [
           mqttConfig.topics.dashboard,
           mqttConfig.topics.status,
@@ -167,50 +227,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         try {
           const data = JSON.parse(str);
+          applyPayloadToRegisters(data);
 
-          // Check if payload contains HMI/register updates
-          setRegisters((prev) => {
-            const next = { ...prev };
-            // Format 1: Direct register keys
-            if (data.HDW1 !== undefined) next.HDW1 = Number(data.HDW1);
-            if (data.HDW2 !== undefined) next.HDW2 = Number(data.HDW2);
-            if (data.HDW3 !== undefined) next.HDW3 = Number(data.HDW3);
-            if (data.HDW4 !== undefined) next.HDW4 = Number(data.HDW4);
-
-            if (data.HDW10 !== undefined) next.HDW10 = Number(data.HDW10);
-            if (data.HDW11 !== undefined) next.HDW11 = Number(data.HDW11);
-            if (data.HDW12 !== undefined) next.HDW12 = Number(data.HDW12);
-            if (data.HDW13 !== undefined) next.HDW13 = Number(data.HDW13);
-
-            // Format 2: Named keys from MQTTX screenshot
-            if (data.total !== undefined) next.HDW1 = Number(data.total);
-            if (data.fix_select !== undefined) next.HDW2 = Number(data.fix_select);
-            if (data.processing_select !== undefined) next.HDW3 = Number(data.processing_select);
-            if (data.done_select !== undefined) next.HDW4 = Number(data.done_select);
-
-            if (data.computer !== undefined) next.HDW10 = Number(data.computer);
-            if (data.printer !== undefined) next.HDW11 = Number(data.printer);
-            if (data.network !== undefined) next.HDW12 = Number(data.network);
-            if (data.other !== undefined) next.HDW13 = Number(data.other);
-
-            // Format 3: X registers
-            if (data.X1 !== undefined) { next.X1 = Number(data.X1); next.HDW1 = next.X1; }
-            if (data.X2 !== undefined) { next.X2 = Number(data.X2); next.HDW2 = next.X2; }
-            if (data.X3 !== undefined) { next.X3 = Number(data.X3); next.HDW3 = next.X3; }
-            if (data.X4 !== undefined) { next.X4 = Number(data.X4); next.HDW4 = next.X4; }
-            if (data.X11 !== undefined) { next.X11 = Number(data.X11); next.HDW10 = next.X11; }
-            if (data.X12 !== undefined) { next.X12 = Number(data.X12); next.HDW11 = next.X12; }
-            if (data.X13 !== undefined) { next.X13 = Number(data.X13); next.HDW12 = next.X13; }
-            if (data.X14 !== undefined) { next.X14 = Number(data.X14); next.HDW13 = next.X14; }
-            if (data.X24 !== undefined) next.X24 = Number(data.X24);
-            if (data.X25 !== undefined) next.X25 = Number(data.X25);
-            if (data.X26 !== undefined) next.X26 = Number(data.X26);
-            if (data.X27 !== undefined) next.X27 = Number(data.X27);
-
-            return next;
-          });
-
-          // Check if payload contains repair item command or status
           if (data.command === 'update_status' && data.id && data.status) {
             setRepairs((prev) =>
               prev.map((r) =>
@@ -221,7 +239,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             );
           }
         } catch {
-          // not JSON, just raw text
+          // not json
         }
       });
 
@@ -238,7 +256,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLastError(err.message || 'Failed to initialize MQTT');
       setConnectionStatus('error');
     }
-  }, [mqttConfig, logMqtt]);
+  }, [mqttConfig, logMqtt, applyPayloadToRegisters]);
 
   // Disconnect MQTT
   const disconnectMqtt = useCallback(() => {
@@ -256,13 +274,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const payloadStr = typeof message === 'string' ? message : JSON.stringify(message);
       logMqtt('out', topic, message);
 
+      // Immediately apply to local registers so the user sees results instantly
+      if (typeof message === 'object') {
+        applyPayloadToRegisters(message);
+      } else {
+        try {
+          applyPayloadToRegisters(JSON.parse(message));
+        } catch {
+          // ignore
+        }
+      }
+
       if (clientRef.current && connectionStatus === 'connected') {
         clientRef.current.publish(topic, payloadStr, { qos: 0 });
         return true;
       }
       return false;
     },
-    [connectionStatus, logMqtt]
+    [connectionStatus, logMqtt, applyPayloadToRegisters]
   );
 
   const publishCommand = useCallback(
@@ -334,7 +363,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setRepairs(updatedRepairs);
       recalculateCounts(updatedRepairs);
 
-      // Publish to MQTT
       publishRequest({
         action: 'new_request',
         id: newId,
@@ -347,7 +375,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         timestamp: new Date().toISOString(),
       });
 
-      // Add Notification
       setNotifications((prev) => [
         {
           id: Math.random().toString(36).substring(2, 9),
@@ -382,7 +409,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setRepairs(updated);
       recalculateCounts(updated);
 
-      // Publish to MQTT Command
       const hdwMap = {
         pending: { register: 'HDW2', x: 'X25', val: 1 },
         processing: { register: 'HDW3', x: 'X26', val: 2 },
@@ -399,7 +425,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updated_at: new Date().toISOString(),
       });
 
-      // Add Notification
       const statusTh =
         newStatus === 'done'
           ? 'เสร็จสิ้นเรียบร้อยแล้ว'
@@ -469,40 +494,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     };
   }, [connectMqtt]);
-
-  // Simulation mode loop: simulates periodic MQTT broker updates if enabled
-  useEffect(() => {
-    if (!isSimulationMode) return;
-
-    const timer = setInterval(() => {
-      // Simulate periodic packet like Wecon HMI 4.5s loop
-      const simData = {
-        total: registers.HDW1,
-        fix_select: registers.HDW2,
-        processing_select: registers.HDW3,
-        done_select: registers.HDW4,
-        computer: registers.HDW10,
-        printer: registers.HDW11,
-        network: registers.HDW12,
-        other: registers.HDW13,
-        command: 'telemetry_sync',
-        result: 'active',
-        X1: registers.HDW1,
-        X2: registers.HDW2,
-        X3: registers.HDW3,
-        X4: registers.HDW4,
-        X11: registers.HDW10,
-        X12: registers.HDW11,
-        X13: registers.HDW12,
-        X14: registers.HDW13,
-        timestamp: new Date().toLocaleTimeString('th-TH'),
-      };
-
-      logMqtt('in', mqttConfig.topics.dashboard, simData);
-    }, 6000);
-
-    return () => clearInterval(timer);
-  }, [isSimulationMode, registers, mqttConfig.topics.dashboard, logMqtt]);
 
   return (
     <AppContext.Provider
