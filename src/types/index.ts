@@ -63,6 +63,7 @@ export interface HmiRegisters {
   X2: number;
   X3: number;
   X4: number;
+  X10?: number;
   X11: number;
   X12: number;
   X13: number;

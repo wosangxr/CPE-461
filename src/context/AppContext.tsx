@@ -104,41 +104,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (data.HDW13 !== undefined) next.HDW13 = Number(data.HDW13);
 
       // Format 2: Named keys
-      if (data.total !== undefined) next.HDW1 = Number(data.total);
+      if (data.total !== undefined) { next.HDW1 = Number(data.total); next.X1 = next.HDW1; }
+      if (data.pending !== undefined) { next.HDW2 = Number(data.pending); next.X2 = next.HDW2; }
+      if (data.processing !== undefined) { next.HDW3 = Number(data.processing); next.X3 = next.HDW3; }
+      if (data.done !== undefined) { next.HDW4 = Number(data.done); next.X4 = next.HDW4; }
+
       if (data.fix_select !== undefined) next.HDW2 = Number(data.fix_select);
+      if (data.pending_select !== undefined) next.HDW2 = Number(data.pending_select);
       if (data.processing_select !== undefined) next.HDW3 = Number(data.processing_select);
       if (data.done_select !== undefined) next.HDW4 = Number(data.done_select);
 
-      if (data.computer !== undefined) next.HDW10 = Number(data.computer);
-      if (data.printer !== undefined) next.HDW11 = Number(data.printer);
-      if (data.network !== undefined) next.HDW12 = Number(data.network);
-      if (data.other !== undefined) next.HDW13 = Number(data.other);
+      if (data.computer !== undefined) { next.HDW10 = Number(data.computer); next.X10 = next.HDW10; }
+      if (data.printer !== undefined) { next.HDW11 = Number(data.printer); next.X11 = next.HDW11; }
+      if (data.network !== undefined) { next.HDW12 = Number(data.network); next.X12 = next.HDW12; }
+      if (data.other !== undefined) { next.HDW13 = Number(data.other); next.X13 = next.HDW13; }
 
-      // Format 3: X registers (According to specsheet.txt mapping)
-      if (data.X1 !== undefined) { next.X1 = Number(data.X1); next.HDW1 = next.X1; }
-      if (data.X2 !== undefined) { next.X2 = Number(data.X2); next.HDW2 = next.X2; }
-      if (data.X3 !== undefined) { next.X3 = Number(data.X3); next.HDW3 = next.X3; }
-      if (data.X4 !== undefined) { next.X4 = Number(data.X4); next.HDW4 = next.X4; }
-      if (data.X11 !== undefined) { next.X11 = Number(data.X11); next.HDW10 = next.X11; }
-      if (data.X12 !== undefined) { next.X12 = Number(data.X12); next.HDW11 = next.X12; }
-      if (data.X13 !== undefined) { next.X13 = Number(data.X13); next.HDW12 = next.X13; }
-      if (data.X14 !== undefined) { next.X14 = Number(data.X14); next.HDW13 = next.X14; }
+      // Unpack nested data.address if present
+      const addr = data.address && typeof data.address === 'object' ? data.address : {};
+      const merged = { ...addr, ...data };
+
+      // Format 3: X registers (Option 1: X1 - X4)
+      if (merged.X1 !== undefined) { next.X1 = Number(merged.X1); next.HDW1 = next.X1; }
+      if (merged.X2 !== undefined) { next.X2 = Number(merged.X2); next.HDW2 = next.X2; }
+      if (merged.X3 !== undefined) { next.X3 = Number(merged.X3); next.HDW3 = next.X3; }
+      if (merged.X4 !== undefined) { next.X4 = Number(merged.X4); next.HDW4 = next.X4; }
+
+      if (merged.X10 !== undefined) { next.X10 = Number(merged.X10); next.HDW10 = next.X10; }
+      if (merged.X11 !== undefined) { next.X11 = Number(merged.X11); next.HDW10 = next.X11; }
+      if (merged.X12 !== undefined) { next.X12 = Number(merged.X12); next.HDW11 = next.X12; }
+      if (merged.X13 !== undefined) { next.X13 = Number(merged.X13); next.HDW12 = next.X13; }
+      if (merged.X14 !== undefined) { next.X14 = Number(merged.X14); next.HDW13 = next.X14; }
 
       // Mapping X24 -> HDW1 (Total), X25 -> HDW2 (Pending), X26 -> HDW3 (Processing), X27 -> HDW4 (Done)
-      if (data.X24 !== undefined) {
-        next.X24 = Number(data.X24);
+      if (merged.X24 !== undefined && merged.X1 === undefined) {
+        next.X24 = Number(merged.X24);
         next.HDW1 = next.X24;
       }
-      if (data.X25 !== undefined) {
-        next.X25 = Number(data.X25);
+      if (merged.X25 !== undefined && merged.X2 === undefined) {
+        next.X25 = Number(merged.X25);
         next.HDW2 = next.X25;
       }
-      if (data.X26 !== undefined) {
-        next.X26 = Number(data.X26);
+      if (merged.X26 !== undefined && merged.X3 === undefined) {
+        next.X26 = Number(merged.X26);
         next.HDW3 = next.X26;
       }
-      if (data.X27 !== undefined) {
-        next.X27 = Number(data.X27);
+      if (merged.X27 !== undefined && merged.X4 === undefined) {
+        next.X27 = Number(merged.X27);
         next.HDW4 = next.X27;
       }
 
