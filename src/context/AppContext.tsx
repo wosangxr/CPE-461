@@ -374,6 +374,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setRepairs(updatedRepairs);
       recalculateCounts(updatedRepairs);
 
+      const total = updatedRepairs.length;
+      const pending = updatedRepairs.filter((i) => i.status === 'pending').length;
+      const processing = updatedRepairs.filter((i) => i.status === 'processing').length;
+      const done = updatedRepairs.filter((i) => i.status === 'done').length;
+
+      const comp = updatedRepairs.filter((i) => i.category === 'computer').length;
+      const print = updatedRepairs.filter((i) => i.category === 'printer').length;
+      const net = updatedRepairs.filter((i) => i.category === 'network').length;
+      const oth = updatedRepairs.filter((i) => !['computer', 'printer', 'network'].includes(i.category)).length;
+
+      // 1. ส่งข้อมูลคำร้องแจ้งซ่อมไปที่ repair/request
       publishRequest({
         action: 'new_request',
         id: newId,
@@ -386,11 +397,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         timestamp: new Date().toISOString(),
       });
 
+      // 2. ส่งคำสั่ง set_address ไปที่ repair/command ให้ HMI อัปเดตตัวเลขหน้าจอทันที (เหมือนปุ่มทดสอบ!)
+      publishCommand({
+        command: 'set_address',
+        total,
+        pending,
+        processing,
+        done,
+        X1: total,
+        X2: pending,
+        X3: processing,
+        X4: done,
+        X24: total,
+        X25: pending,
+        X26: processing,
+        X27: done,
+        X10: comp,
+        X11: print,
+        X12: net,
+        X13: oth,
+        X14: 1,
+        timestamp: new Date().toISOString(),
+      });
+
+      // 3. ส่งสำเนาไปที่ repair/status
+      publishMessage(mqttConfig.topics.status, {
+        total,
+        pending,
+        processing,
+        done,
+        X1: total,
+        X2: pending,
+        X3: processing,
+        X4: done,
+        X24: total,
+        X25: pending,
+        X26: processing,
+        X27: done,
+        updated_at: new Date().toISOString(),
+      });
+
       setNotifications((prev) => [
         {
           id: Math.random().toString(36).substring(2, 9),
           title: 'แจ้งซ่อมใหม่สำเร็จ',
-          message: `สร้างคำร้องหมายเลข ${newId} เรียบร้อยแล้ว`,
+          message: `สร้างคำร้องหมายเลข ${newId} เรียบร้อยแล้ว (อัปเดต HMI: ${total} คำร้อง)`,
           time: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
           status: 'success',
           read: false,
@@ -398,7 +449,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...prev,
       ]);
     },
-    [repairs, recalculateCounts, publishRequest]
+    [repairs, recalculateCounts, publishRequest, publishCommand, publishMessage, mqttConfig.topics.status]
   );
 
   // Update Status
@@ -420,12 +471,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setRepairs(updated);
       recalculateCounts(updated);
 
+      const total = updated.length;
+      const pending = updated.filter((i) => i.status === 'pending').length;
+      const processing = updated.filter((i) => i.status === 'processing').length;
+      const done = updated.filter((i) => i.status === 'done').length;
+
+      const comp = updated.filter((i) => i.category === 'computer').length;
+      const print = updated.filter((i) => i.category === 'printer').length;
+      const net = updated.filter((i) => i.category === 'network').length;
+      const oth = updated.filter((i) => !['computer', 'printer', 'network'].includes(i.category)).length;
+
       const hdwMap = {
         pending: { register: 'HDW2', x: 'X25', val: 1 },
         processing: { register: 'HDW3', x: 'X26', val: 2 },
         done: { register: 'HDW4', x: 'X27', val: 3 },
       }[newStatus];
 
+      // 1. ส่งคำสั่ง set_address ปรับค่าตัวเลขทั้งหมด
+      publishCommand({
+        command: 'set_address',
+        total,
+        pending,
+        processing,
+        done,
+        X1: total,
+        X2: pending,
+        X3: processing,
+        X4: done,
+        X24: total,
+        X25: pending,
+        X26: processing,
+        X27: done,
+        X10: comp,
+        X11: print,
+        X12: net,
+        X13: oth,
+        updated_at: new Date().toISOString(),
+      });
+
+      // 2. ส่ง event set_status
       publishCommand({
         command: 'set_status',
         id,

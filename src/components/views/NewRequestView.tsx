@@ -35,6 +35,8 @@ export default function NewRequestView() {
   const [priority, setPriority] = useState<RepairPriority>('medium');
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const categoryOptions: { id: RepairCategory; label: string; register: string; icon: any }[] = [
     { id: 'computer', label: 'คอมพิวเตอร์', register: 'HDW10', icon: Monitor },
     { id: 'printer', label: 'เครื่องพิมพ์', register: 'HDW11', icon: Printer },
@@ -47,20 +49,26 @@ export default function NewRequestView() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !room || !description) return;
+    setValidationError(null);
 
     const catObj = categoryOptions.find((c) => c.id === category);
+    const catLabel = catObj?.label || 'อุปกรณ์ทั่วไป';
+
+    // Smart defaults if user left some fields blank so submit never fails silently
+    const finalTitle = title.trim() || `แจ้งซ่อม${catLabel} (${building} ${floor})`;
+    const finalRoom = room.trim() || `${floor} โถงกลาง`;
+    const finalDescription = description.trim() || `แจ้งซ่อม${catLabel} บริเวณ ${building} ${floor} ${finalRoom} (ส่งจากระบบ Dashboard)`;
 
     addRepair({
-      title,
+      title: finalTitle,
       category,
-      categoryLabel: `${catObj?.label || 'งานซ่อม'} (${catObj?.register || 'HDW'})`,
+      categoryLabel: `${catLabel} (${catObj?.register || 'HDW'})`,
       building,
       floor,
-      room,
-      reporterName,
-      reporterPhone,
-      description,
+      room: finalRoom,
+      reporterName: reporterName.trim() || 'ธนวัฒน์ ประสาทเขตรการ',
+      reporterPhone: reporterPhone.trim() || '081-234-5678',
+      description: finalDescription,
       status: 'pending',
       priority,
       hmiRegister: catObj?.register || 'HDW2',
@@ -186,8 +194,7 @@ export default function NewRequestView() {
               </label>
               <input
                 type="text"
-                required
-                placeholder="เช่น ห้อง 11-502 หรือ โถงบันได"
+                placeholder="เช่น ห้อง 11-502 หรือ โถงบันได (เว้นว่างได้)"
                 value={room}
                 onChange={(e) => setRoom(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -248,8 +255,7 @@ export default function NewRequestView() {
               </label>
               <input
                 type="text"
-                required
-                placeholder="เช่น จอคอมพิวเตอร์เปิดไม่ติด, เครื่องพิมพ์กระดาษติด"
+                placeholder="เช่น จอคอมพิวเตอร์เปิดไม่ติด, เครื่องพิมพ์กระดาษติด (เว้นว่างได้)"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -261,9 +267,8 @@ export default function NewRequestView() {
                 อธิบายอาการโดยละเอียด
               </label>
               <textarea
-                required
                 rows={3}
-                placeholder="ระบุอาการผิดปกติ สิ่งที่เกิดขึ้น รหัสเครื่อง หรือข้อความ error ที่แสดง..."
+                placeholder="ระบุอาการผิดปกติ สิ่งที่เกิดขึ้น หรือข้อความ error ที่แสดง (เว้นว่างได้ ระบบจะสร้างข้อความให้อัตโนมัติ)..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
