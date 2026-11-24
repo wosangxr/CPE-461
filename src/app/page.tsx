@@ -39,7 +39,7 @@ export default function Home() {
       <Header />
 
       {/* Main Container with Sidebar + Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Sidebar */}
         <Sidebar />
 

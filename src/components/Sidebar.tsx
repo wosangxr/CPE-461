@@ -67,17 +67,17 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="flex h-[calc(100vh-5rem)] w-64 flex-col justify-between border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <aside className="flex w-full shrink-0 flex-col justify-between border-b border-slate-200 bg-white p-2 md:h-[calc(100vh-5rem)] md:w-56 md:border-b-0 md:border-r md:p-4 xl:w-64 dark:border-slate-800 dark:bg-slate-900">
       <div className="space-y-6">
         {/* Navigation list */}
-        <nav className="space-y-1.5">
+        <nav className="flex gap-1.5 overflow-x-auto md:block md:space-y-1.5">
           {navItems.map((item) => {
             const isActive = currentView === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => setCurrentView(item.id)}
-                className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-all ${
+                className={`flex min-h-11 shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-medium transition-all md:w-full md:px-3.5 md:py-2.5 ${
                   isActive
                     ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25 dark:bg-sky-600'
                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
@@ -90,7 +90,7 @@ export default function Sidebar() {
                   <div>
                     <div className="leading-tight">{item.label}</div>
                     <div
-                      className={`text-[10px] ${
+                      className={`hidden text-[10px] md:block ${
                         isActive ? 'text-sky-100' : 'text-slate-400 dark:text-slate-500'
                       }`}
                     >
@@ -117,7 +117,7 @@ export default function Sidebar() {
       </div>
 
       {/* SPU Branding Card at bottom of sidebar (matching PDF mockup) */}
-      <div className="space-y-3">
+      <div className="hidden space-y-3 md:block">
         <div className="rounded-xl border border-sky-100 bg-gradient-to-br from-sky-50 to-indigo-50/50 p-3.5 dark:border-sky-900/50 dark:from-slate-800 dark:to-sky-950/40">
           <div className="flex items-center space-x-2 text-sky-700 dark:text-sky-300">
             <ShieldCheck className="h-4 w-4" />
